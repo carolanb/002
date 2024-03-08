@@ -23,3 +23,18 @@ def strategies_design(strate, train_data, validate_data, df_buy, df_sell):
         train_data['bb_sell_signal'] = train_data['close'] > train_data['bb_upper']
         validate_data['bb_buy_trade_signal'] = train_data['bb_buy_signal'].shift(1)
         validate_data['bb_sell_trade_signal'] = train_data['bb_sell_signal'].shift(1)
+
+    if 'MM' in strat:
+        short_window = 40
+        long_window = 100
+
+        data['Short_MA'] = data['Close'].rolling(window=short_window, min_periods=1).mean()
+        data['Long_MA'] = data['Close'].rolling(window=long_window, min_periods=1).mean()
+
+        data['Signal_Long'] = 0.0
+        data['Signal_Long'][short_window:] = np.where(data['Short_MA'][short_window:] > data['Long_MA'][short_window:], 1.0, 0.0)
+        data['Positions_Long'] = data['Signal_Long'].diff()
+
+        data['Signal_Short'] = 0.0
+        data['Signal_Short'][short_window:] = np.where(data['Short_MA'][short_window:] < data['Long_MA'][short_window:], -1.0, 0.0)
+        data['Positions_Short'] = data['Signal_Short'].diff()
