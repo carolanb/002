@@ -39,3 +39,23 @@ def strategies_design(strate, train_data, validate_data, df_buy, df_sell):
         data['Signal_Short'] = 0.0
         data['Signal_Short'][short_window:] = np.where(data['Short_MA'][short_window:] < data['Long_MA'][short_window:], -1.0, 0.0)
         data['Positions_Short'] = data['Signal_Short'].diff()
+
+def close_position(price, position, positions, closed_positions, commission):
+            if position.order_type == 'LONG':
+                if price <= position.stop_loss or price >= position.take_profit:
+                    update_cash_and_position(price, position, positions, closed_positions, commission, profit=price >= position.take_profit)
+            elif position.order_type == 'SHORT':
+                if price >= position.stop_loss or price <= position.take_profit:
+                    update_cash_and_position(price, position, positions, closed_positions, commission, profit=price <= position.take_profit)
+
+def update_cash_and_position(price, position, positions, closed_positions, commission, profit=True):
+            global cash  # Assuming 'cash' is a global variable
+            if profit:
+                cash += price * (1 - commission if position.order_type == 'LONG' else 1 + commission)
+            else:
+                cash -= price * (1 + commission if position.order_type == 'LONG' else 1 - commission)
+            position.is_active = False
+            position.sold_at = price
+            closed_positions.append(position)
+            positions.remove(position)
+    
