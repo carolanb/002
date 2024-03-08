@@ -1,4 +1,4 @@
-import ta
+import talib as ta  
 import numpy as np
 
 class Order:
@@ -12,10 +12,10 @@ class Order:
         self.is_active = is_active
 
 def strategies_design(strate, train_data, validate_data, df_buy, df_sell):
-    if 'rsi':
-        # Proceses
-        df_buy['rsi_buy_trade_signal'] = [True if cat == 1 else False for cat in rsi]
-        df_sell['rsi_sell_trade_signal'] = [True if cat == -1 else False for cat in rsi]
+    if 'rsi' in strate:
+        rsi = ta.RSI(train_data['Close'].values, timeperiod=14)  
+        df_buy['rsi_buy_trade_signal'] = rsi < 30  
+        df_sell['rsi_sell_trade_signal'] = rsi > 70 
     
     if 'bb' in strat:
         train_data['bb_upper'], train_data['bb_middle'], train_data['bb_lower'] = ta.volatility.bollinger_hband(train_data['close']), ta.volatility.bollinger_mavg(train_data['close']), ta.volatility.bollinger_lband(train_data['close'])
