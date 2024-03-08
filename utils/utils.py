@@ -71,3 +71,24 @@ def execute_buy_order(row, positions, commission, multiplier):
                             order_type='LONG')
                 positions.append(order)
     
+def update_portfolio_values(data_validation, positions, multiplier, short_multiplier):
+    open_long_positions = [multiplier * data_validation.Close.iloc[-1] for position in positions if position.order_type == 'LONG' and position.is_active]
+    open_short_positions = [-data_validation.Close.iloc[-1] * short_multiplier for position in positions if position.order_type == 'SHORT' and position.is_active]
+
+    # Update global cash and portfolio values
+    global cash_values, portfolio_values  
+    portfolio_values.append(sum(open_long_positions) + sum(open_short_positions) + cash)
+    return sum(open_long_positions) + sum(open_short_positions) + cash  
+
+def execute_sell_order(row, positions, commission, multiplier):
+    global cash  # Assuming 'cash' is a global variable
+    price = multiplier * row.Close
+    if cash >= price * (1 + commission):
+        cash += price * (1 - commission)  # This seems like a mistake, it should reduce cash, but as it's a SHORT sell, it's adding cash temporarily.
+        order = Order(timestamp=row.Timestamp,
+                      bought_at=price,
+                      stop_loss=price * (1 + STOP_LOSS),
+                      take_profit=price * (1 - TAKE_PROFIT),
+                      order_type='SHORT')
+        positions.append(order)
+
