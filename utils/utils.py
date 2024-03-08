@@ -1,4 +1,5 @@
 import ta
+import numpy as np
 
 class Order:
     def __init__(self, timestamp, bought_at, stop_loss, take_profit, order_type, sold_at=None, is_active=True):
