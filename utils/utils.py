@@ -22,20 +22,12 @@ def strategies_design(strate, train_data, validate_data, df_buy, df_sell):
         df_buy['bb_buy_trade_signal'] = validate_data['Close'] < lower_band  # Compra cuando el precio está por debajo de la banda inferior
         df_sell['bb_sell_trade_signal'] = validate_data['Close'] > upper_band  # Venta cuando el precio está por encima de la banda superior
 
-    if 'MM' in strat:
-        short_window = 40
-        long_window = 100
-
-        data['Short_MA'] = data['Close'].rolling(window=short_window, min_periods=1).mean()
-        data['Long_MA'] = data['Close'].rolling(window=long_window, min_periods=1).mean()
-
-        data['Signal_Long'] = 0.0
-        data['Signal_Long'][short_window:] = np.where(data['Short_MA'][short_window:] > data['Long_MA'][short_window:], 1.0, 0.0)
-        data['Positions_Long'] = data['Signal_Long'].diff()
-
-        data['Signal_Short'] = 0.0
-        data['Signal_Short'][short_window:] = np.where(data['Short_MA'][short_window:] < data['Long_MA'][short_window:], -1.0, 0.0)
-        data['Positions_Short'] = data['Signal_Short'].diff()
+    if 'MM' in strate:
+        short_window, long_window = 40, 100
+        short_ma = validate_data['Close'].rolling(window=short_window, min_periods=1).mean()
+        long_ma = validate_data['Close'].rolling(window=long_window, min_periods=1).mean()
+        df_buy['mm_buy_trade_signal'] = short_ma > long_ma  # Compra cuando la media corta cruza por encima de la media larga
+        df_sell['mm_sell_trade_signal'] = short_ma < long_ma  # Venta cuando la media corta cruza por debajo de la media larga
 
 def close_position(price, position, positions, closed_positions, commission):
             if position.order_type == 'LONG':
