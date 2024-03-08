@@ -17,10 +17,15 @@ def strategies_design(strate, train_data, validate_data, df_buy, df_sell):
         df_buy['rsi_buy_trade_signal'] = rsi < 30  
         df_sell['rsi_sell_trade_signal'] = rsi > 70 
     
-    if 'bb' in strate:
-        upper_band, middle_band, lower_band = ta.BBANDS(validate_data['Close'].values, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
-        df_buy['bb_buy_trade_signal'] = validate_data['Close'] < lower_band  # Compra cuando el precio está por debajo de la banda inferior
-        df_sell['bb_sell_trade_signal'] = validate_data['Close'] > upper_band  # Venta cuando el precio está por encima de la banda superior
+if 'bb' in strate:
+        rolling_mean = validate_data['Close'].rolling(window=20).mean()
+        rolling_std = validate_data['Close'].rolling(window=20).std()
+
+        validate_data['BBANDS_UpperBand'] = rolling_mean + (rolling_std * 2)
+        validate_data['BBANDS_LowerBand'] = rolling_mean - (rolling_std * 2)
+
+        df_buy['bb_buy_trade_signal'] = validate_data['Close'] < validate_data['BBANDS_LowerBand']
+        df_sell['bb_sell_trade_signal'] = validate_data['Close'] > validate_data['BBANDS_UpperBand']
 
     if 'MM' in strate:
         short_window, long_window = 40, 100
