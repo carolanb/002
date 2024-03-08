@@ -59,7 +59,7 @@ def perform():
         final_portfolio_value = update_portfolio_values(data_validation, positions, 3333, 1000)
         return final_portfolio_value  
     
-original_strategies = ['rsi', 'bb', 'MM']
+    original_strategies = ['rsi', 'bb', 'MM']
 
     # Generar todas las combinaciones posibles de estrategias para diferentes longitudes
     all_combinations = []

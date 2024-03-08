@@ -1,5 +1,6 @@
-import talib as ta  
+import ta  
 import numpy as np
+from ta.momentum import RSIIndicator
 
 class Order:
     def __init__(self, timestamp, bought_at, stop_loss, take_profit, order_type, sold_at=None, is_active=True):
@@ -13,9 +14,10 @@ class Order:
 
 def strategies_design(strate, train_data, validate_data, df_buy, df_sell):
     if 'rsi' in strate:
-        rsi = ta.RSI(train_data['Close'].values, timeperiod=14)  
-        df_buy['rsi_buy_trade_signal'] = rsi < 30  
-        df_sell['rsi_sell_trade_signal'] = rsi > 70 
+        train_rsi = RSIIndicator(close=train_data['Close'], window=14).rsi()
+        validate_rsi = RSIIndicator(close=validate_data['Close'], window=14).rsi()
+        df_buy['rsi_buy_trade_signal'] = validate_rsi < 30  
+        df_sell['rsi_sell_trade_signal'] = validate_rsi > 70  
     
 if 'bb' in strate:
         rolling_mean = validate_data['Close'].rolling(window=20).mean()
