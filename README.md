@@ -1,6 +1,6 @@
 # 002
 Technical Analysis
-team team
+
 This project consists of a quick view of one of the most known analyses such as the technical analysis.
 
 Technical analysis is a method used to evaluate securities and predict future price movements based on statistical trends in trading activity, such as price movement and trading volume. It primarily focuses on analyzing charts and patterns to identify potential trading opportunities. Here's a breakdown of some key components and principles of technical analysis:
