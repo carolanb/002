@@ -58,3 +58,19 @@ def perform():
         # Final cash and portfolio calculation outside the loop if necessary
         final_portfolio_value = update_portfolio_values(data_validation, positions, 3333, 1000)
         return final_portfolio_value  
+    
+original_strategies = ['rsi', 'bb', 'MM']
+
+    # Generar todas las combinaciones posibles de estrategias para diferentes longitudes
+    all_combinations = []
+    for r in range(1, len(original_strategies) + 1):
+        combinations = list(itertools.combinations(original_strategies, r))
+        all_combinations.extend(combinations)
+
+    # Si necesitas convertir las tuplas a listas (por ejemplo, para que coincidan con el formato de tus estrategias existentes)
+    all_combinations = [list(comb) for comb in all_combinations]
+
+    for strat in all_combinations:
+        portfolio = backtest(strat)
+        df_trash = pd.DataFrame({'gain': [portfolio], 'strategy': [str(strat)]})
+        df_results = pd.concat([df_results, df_trash], ignore_index=True)
