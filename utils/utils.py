@@ -15,3 +15,11 @@ def strategies_design(strate, train_data, validate_data, df_buy, df_sell):
         # Proceses
         df_buy['rsi_buy_trade_signal'] = [True if cat == 1 else False for cat in rsi]
         df_sell['rsi_sell_trade_signal'] = [True if cat == -1 else False for cat in rsi]
+    
+    if 'bb' in strat:
+        train_data['bb_upper'], train_data['bb_middle'], train_data['bb_lower'] = ta.volatility.bollinger_hband(train_data['close']), ta.volatility.bollinger_mavg(train_data['close']), ta.volatility.bollinger_lband(train_data['close'])
+        
+        train_data['bb_buy_signal'] = train_data['close'] < train_data['bb_lower']
+        train_data['bb_sell_signal'] = train_data['close'] > train_data['bb_upper']
+        validate_data['bb_buy_trade_signal'] = train_data['bb_buy_signal'].shift(1)
+        validate_data['bb_sell_trade_signal'] = train_data['bb_sell_signal'].shift(1)
