@@ -1,4 +1,6 @@
 import pandas as pd
+import itertools 
+import talib as ta
 from utils import strategies_design
 from utils import execute_buy_order
 from utils import update_cash_and_position
@@ -32,7 +34,6 @@ def perform():
         strategies_design(strat, data, data_validation, df_buy, df_sell)
 
         # Main loop
-        # Main loop
         for (idx, row), (_, row_buy), (_, row_sell) in zip(data_validation.iterrows(), df_buy.iterrows(), df_sell.iterrows()):
             # Update price
             price = 3333 * row.Close
@@ -56,3 +57,4 @@ def perform():
 
         # Final cash and portfolio calculation outside the loop if necessary
         final_portfolio_value = update_portfolio_values(data_validation, positions, 3333, 1000)
+        return final_portfolio_value  
