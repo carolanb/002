@@ -7,7 +7,7 @@ from utils import close_position
 
 def perform():
     data = pd.read_csv('./data/aapl_5m_train.csv')
-    data_val = pd.read_csv('./data/aapl_5m_validation.csv')
+    data_validation = pd.read_csv('./data/aapl_5m_validation.csv')
     df_results = pd.DataFrame({'gain': [], 'ind': []})
 
     data =   (data)
