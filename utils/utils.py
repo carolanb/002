@@ -58,4 +58,16 @@ def update_cash_and_position(price, position, positions, closed_positions, commi
             position.sold_at = price
             closed_positions.append(position)
             positions.remove(position)
+            
+def execute_buy_order(row, positions, commission, multiplier):
+            global cash  # Assuming 'cash' is a global variable
+            price = multiplier * row.Close
+            if cash >= price * (1 + commission):
+                cash -= price * (1 + commission)
+                order = Order(timestamp=row.Timestamp,
+                            bought_at=price,
+                            stop_loss=price * (1 - STOP_LOSS),
+                            take_profit=price * (1 + TAKE_PROFIT),
+                            order_type='LONG')
+                positions.append(order)
     
