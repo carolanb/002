@@ -55,17 +55,15 @@ def update_cash_and_positions(price, position, positions, closed_positions, comm
             closed_positions.append(position)
             positions.remove(position)
             
-def execute_buy_order(row, positions, commission, multiplier):
-            global cash  # Assuming 'cash' is a global variable
-            price = multiplier * row.Close
-            if cash >= price * (1 + commission):
-                cash -= price * (1 + commission)
-                order = Order(timestamp=row.Timestamp,
-                            bought_at=price,
-                            stop_loss=price * (1 - STOP_LOSS),
-                            take_profit=price * (1 + TAKE_PROFIT),
-                            order_type='LONG')
-                positions.append(order)
+def execute_buy_order(row, positions, commission, multiplier, STOP_LOSS, TAKE_PROFIT):
+            global cash, order count  # Usa variables globales
+            price = multiplier * row['Close'] #usa close directamente del row
+            if cash >= price * (1 + commission):  # Verifica si tienes suficiente efectivo
+                cash -= price * (1 + commission)  # Actualiza el efectivo
+                # Crea una nueva orden y la añade a la lista de posiciones
+                new_order = Order(row.name, price, price * (1 - STOP_LOSS), price * (1 + TAKE_PROFIT), 'LONG')
+                positions.append(new_order)
+                order_count += 1  # Incrementa el contador de órdenes 
     
 def update_portfolio_values(data_validation, positions, multiplier, short_multiplier):
     open_long_positions = [multiplier * data_validation.Close.iloc[-1] for position in positions if position.order_type == 'LONG' and position.is_active]
