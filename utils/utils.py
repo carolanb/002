@@ -37,12 +37,12 @@ def strategies_design(strate, train_data, validate_data, df_buy, df_sell):
         df_sell['mm_sell_trade_signal'] = short_ma < long_ma  # Venta cuando la media corta cruza por debajo de la media larga
 
 def close_position(price, position, positions, closed_positions, commission):
-            if position.order_type == 'LONG':
-                if price <= position.stop_loss or price >= position.take_profit:
-                    update_cash_and_position(price, position, positions, closed_positions, commission, profit=price >= position.take_profit)
-            elif position.order_type == 'SHORT':
-                if price >= position.stop_loss or price <= position.take_profit:
-                    update_cash_and_position(price, position, positions, closed_positions, commission, profit=price <= position.take_profit)
+    if position.order_type == 'LONG':
+        if price <= position.stop_loss or price >= position.take_profit:
+            update_cash_and_position(price, position, positions, closed_positions, commission, profit=price >= position.take_profit)
+    elif position.order_type == 'SHORT':
+        if price >= position.stop_loss or price <= position.take_profit:
+            update_cash_and_position(price, position, positions, closed_positions, commission, profit=price <= position.take_profit)
 
 def update_cash_and_position(price, position, positions, closed_positions, commission, profit=True):
             global cash  # Assuming 'cash' is a global variable
