@@ -65,24 +65,18 @@ def execute_buy_order(row, positions, commission, multiplier, STOP_LOSS, TAKE_PR
                 positions.append(new_order)
                 order_count += 1  # Incrementa el contador de órdenes 
     
-def update_portfolio_values(data_validation, positions, multiplier, short_multiplier):
-    open_long_positions = [multiplier * data_validation.Close.iloc[-1] for position in positions if position.order_type == 'LONG' and position.is_active]
-    open_short_positions = [-data_validation.Close.iloc[-1] * short_multiplier for position in positions if position.order_type == 'SHORT' and position.is_active]
+def update_portfolio_values(data, positions):
+    global cash, portfolio_values  
+    portfolio_value = sum([position.bought_at for position in positions if position.is_active])
+    cash_values.append(cash)
+    portfolio_values.append(portfolio_value + cash)  # Incluye el valor en efectivo y el valor de las posiciones activas
 
-    # Update global cash and portfolio values
-    global cash_values, portfolio_values  
-    portfolio_values.append(sum(open_long_positions) + sum(open_short_positions) + cash)
-    return sum(open_long_positions) + sum(open_short_positions) + cash  
-
-def execute_sell_order(row, positions, commission, multiplier):
-    global cash  # Assuming 'cash' is a global variable
-    price = multiplier * row.Close
-    if cash >= price * (1 + commission):
-        cash += price * (1 - commission)  # This seems like a mistake, it should reduce cash, but as it's a SHORT sell, it's adding cash temporarily.
-        order = Order(timestamp=row.Timestamp,
-                      bought_at=price,
-                      stop_loss=price * (1 + STOP_LOSS),
-                      take_profit=price * (1 - TAKE_PROFIT),
-                      order_type='SHORT')
-        positions.append(order)
-
+def execute_sell_order(row, positions, commission, multiplier, STOP_LOSS, TAKE_PROFIT):
+    global cash, order_count  # Usa variables globales
+    price = multiplier * row['Close']  # Usa 'Close' directamente del row
+    if cash >= price * (1 + commission):  # Aunque esto es para vender, verifica la lógica según tu estrategia
+        cash += price * (1 - commission)  # Actualiza el efectivo, asegúrate que la lógica de incremento y decremento sea correcta
+        # Crea una nueva orden y la añade a la lista de posiciones
+        new_order = Order(row.name, price, price * (1 + STOP_LOSS), price * (1 - TAKE_PROFIT), 'SHORT')
+        positions.append(new_order)
+        order_count += 1  # Incrementa el contador de órdenes
