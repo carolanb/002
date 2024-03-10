@@ -44,12 +44,12 @@ def close_position(price, position, positions, closed_positions, commission):
         if price >= position.stop_loss or price <= position.take_profit:
             update_cash_and_position(price, position, positions, closed_positions, commission, profit=price <= position.take_profit)
 
-def update_cash_and_position(price, position, positions, closed_positions, commission, profit=True):
+def update_cash_and_positions(price, position, positions, closed_positions, commission, profit=True):
             global cash  # Assuming 'cash' is a global variable
             if profit:
                 cash += price * (1 - commission if position.order_type == 'LONG' else 1 + commission)
             else:
-                cash -= price * (1 + commission if position.order_type == 'LONG' else 1 - commission)
+                 cash -= (position.bought_at - price) * (1 + commission if position.order_type == 'LONG' else 1 - commission)
             position.is_active = False
             position.sold_at = price
             closed_positions.append(position)
