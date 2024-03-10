@@ -16,23 +16,23 @@ def strategies_design(strate, train_data, validate_data, df_buy, df_sell):
     if 'rsi' in strate:
         train_rsi = RSIIndicator(close=train_data['Close'], window=14).rsi()
         validate_rsi = RSIIndicator(close=validate_data['Close'], window=14).rsi()
-        df_buy['rsi_buy_trade_signal'] = validate_rsi < 30  
-        df_sell['rsi_sell_trade_signal'] = validate_rsi > 70  
+        df_buy['rsi_buy_trade_signal'] = train_rsi < 30  
+        df_sell['rsi_sell_trade_signal'] = train_rsi > 70  
     
-if 'bb' in strate:
-        rolling_mean = validate_data['Close'].rolling(window=20).mean()
-        rolling_std = validate_data['Close'].rolling(window=20).std()
+    if 'bb' in strate:
+        rolling_mean = train_data['Close'].rolling(window=20).mean()
+        rolling_std = train_data['Close'].rolling(window=20).std()
 
-        validate_data['BBANDS_UpperBand'] = rolling_mean + (rolling_std * 2)
-        validate_data['BBANDS_LowerBand'] = rolling_mean - (rolling_std * 2)
+        train_data['BBANDS_UpperBand'] = rolling_mean + (rolling_std * 2)
+        train_data['BBANDS_LowerBand'] = rolling_mean - (rolling_std * 2)
 
-        df_buy['bb_buy_trade_signal'] = validate_data['Close'] < validate_data['BBANDS_LowerBand']
-        df_sell['bb_sell_trade_signal'] = validate_data['Close'] > validate_data['BBANDS_UpperBand']
+        df_buy['bb_buy_trade_signal'] = train_data['Close'] < train_data['BBANDS_LowerBand']
+        df_sell['bb_sell_trade_signal'] = train_data['Close'] > train_data['BBANDS_UpperBand']
 
     if 'MM' in strate:
         short_window, long_window = 40, 100
-        short_ma = validate_data['Close'].rolling(window=short_window, min_periods=1).mean()
-        long_ma = validate_data['Close'].rolling(window=long_window, min_periods=1).mean()
+        short_ma = train_data['Close'].rolling(window=short_window, min_periods=10).mean()
+        long_ma = train_data['Close'].rolling(window=long_window, min_periods=10).mean()
         df_buy['mm_buy_trade_signal'] = short_ma > long_ma  # Compra cuando la media corta cruza por encima de la media larga
         df_sell['mm_sell_trade_signal'] = short_ma < long_ma  # Venta cuando la media corta cruza por debajo de la media larga
 
