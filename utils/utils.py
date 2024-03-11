@@ -56,7 +56,7 @@ def update_cash_and_positions(price, position, positions, closed_positions, comm
             positions.remove(position)
             
 def execute_buy_order(row, positions, commission, multiplier, STOP_LOSS, TAKE_PROFIT):
-            global cash, order count  # Usa variables globales
+            global cash, order_count  # Usa variables globales
             price = multiplier * row['Close'] #usa close directamente del row
             if cash >= price * (1 + commission):  # Verifica si tienes suficiente efectivo
                 cash -= price * (1 + commission)  # Actualiza el efectivo
