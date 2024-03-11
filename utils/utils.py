@@ -1,6 +1,19 @@
 import ta  
 import numpy as np
 from ta.momentum import RSIIndicator
+import numpy as np
+import pandas as pd
+from scipy.optimize import minimize
+from scipy.integrate import quad
+from scipy.stats import norm
+import matplotlib.pyplot as plt
+from scipy.stats import lognorm
+import ta
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+from ta.momentum import RSIIndicator
+import itertools
 
 class Order:
     def __init__(self, timestamp, bought_at, stop_loss, take_profit, order_type, sold_at=None, is_active=True):
@@ -11,72 +24,75 @@ class Order:
         self.order_type = order_type
         self.sold_at = sold_at
         self.is_active = is_active
-
+ 
 def strategies_design(strate, train_data, validate_data, df_buy, df_sell):
     if 'rsi' in strate:
         train_rsi = RSIIndicator(close=train_data['Close'], window=14).rsi()
         validate_rsi = RSIIndicator(close=validate_data['Close'], window=14).rsi()
-        df_buy['rsi_buy_trade_signal'] = train_rsi < 30  
-        df_sell['rsi_sell_trade_signal'] = train_rsi > 70  
-    
+        df_buy['rsi_buy_trade_signal'] = train_rsi < 25  
+        df_sell['rsi_sell_trade_signal'] = train_rsi > 75  
+   
     if 'bb' in strate:
-        rolling_mean = train_data['Close'].rolling(window=20).mean()
-        rolling_std = train_data['Close'].rolling(window=20).std()
-
-        train_data['BBANDS_UpperBand'] = rolling_mean + (rolling_std * 2)
-        train_data['BBANDS_LowerBand'] = rolling_mean - (rolling_std * 2)
-
-        df_buy['bb_buy_trade_signal'] = train_data['Close'] < train_data['BBANDS_LowerBand']
-        df_sell['bb_sell_trade_signal'] = train_data['Close'] > train_data['BBANDS_UpperBand']
-
+            # Calcular medias móviles y desviación estándar para los datos de validación
+            rolling_mean = train_data['Close'].rolling(window=20).mean()
+            rolling_std = train_data['Close'].rolling(window=20).std()
+ 
+            # Calcular las Bandas de Bollinger para los datos de validación
+            train_data['BBANDS_UpperBand'] = rolling_mean + (rolling_std * 2)
+            train_data['BBANDS_LowerBand'] = rolling_mean - (rolling_std * 2)
+ 
+            # Generar señales de compra y venta basadas en las Bandas de Bollinger para la validación
+            df_buy['bb_buy_trade_signal'] = train_data['Close'] < train_data['BBANDS_LowerBand']
+            df_sell['bb_sell_trade_signal'] = train_data['Close'] > train_data['BBANDS_UpperBand']
+           
     if 'MM' in strate:
         short_window, long_window = 40, 100
         short_ma = train_data['Close'].rolling(window=short_window, min_periods=10).mean()
         long_ma = train_data['Close'].rolling(window=long_window, min_periods=10).mean()
         df_buy['mm_buy_trade_signal'] = short_ma > long_ma  # Compra cuando la media corta cruza por encima de la media larga
         df_sell['mm_sell_trade_signal'] = short_ma < long_ma  # Venta cuando la media corta cruza por debajo de la media larga
+ 
+def update_cash_and_positions(price, position, commission, cash, profit=True):
+    if profit:
+        cash += (price - position.bought_at) * (1 - commission if position.order_type == 'LONG' else 1 + commission)
+    else:
+        cash -= (position.bought_at - price) * (1 + commission if position.order_type == 'LONG' else 1 - commission)
+    position.is_active = False
+    position.sold_at = price
+    # No necesitas pasar ni modificar 'positions' ni 'closed_positions' aquí; eso debería manejarse en otro lugar
+    return cash  # Devuelve el 'cash' actualizado
 
-def close_position(price, position, positions, closed_positions, commission):
+
+def close_position(price, position, commission, cash):
     if position.order_type == 'LONG':
         if price <= position.stop_loss or price >= position.take_profit:
-            update_cash_and_position(price, position, positions, closed_positions, commission, profit=price >= position.take_profit)
+            cash = update_cash_and_positions(price, position, commission, cash, profit=price >= position.take_profit)
     elif position.order_type == 'SHORT':
         if price >= position.stop_loss or price <= position.take_profit:
-            update_cash_and_position(price, position, positions, closed_positions, commission, profit=price <= position.take_profit)
+            cash = update_cash_and_positions(price, position, commission, cash, profit=price <= position.take_profit)
+    return cash  # Devuelve el 'cash' actualizado
 
-def update_cash_and_positions(price, position, positions, closed_positions, commission, profit=True):
-            global cash  # Assuming 'cash' is a global variable
-            if profit:
-                cash += price * (1 - commission if position.order_type == 'LONG' else 1 + commission)
-            else:
-                 cash -= (position.bought_at - price) * (1 + commission if position.order_type == 'LONG' else 1 - commission)
-            position.is_active = False
-            position.sold_at = price
-            closed_positions.append(position)
-            positions.remove(position)
-            
-def execute_buy_order(row, positions, commission, multiplier, STOP_LOSS, TAKE_PROFIT):
-            global cash, order_count  # Usa variables globales
-            price = multiplier * row['Close'] #usa close directamente del row
-            if cash >= price * (1 + commission):  # Verifica si tienes suficiente efectivo
-                cash -= price * (1 + commission)  # Actualiza el efectivo
-                # Crea una nueva orden y la añade a la lista de posiciones
-                new_order = Order(row.name, price, price * (1 - STOP_LOSS), price * (1 + TAKE_PROFIT), 'LONG')
-                positions.append(new_order)
-                order_count += 1  # Incrementa el contador de órdenes 
-    
-def update_portfolio_values(data, positions):
-    global cash, portfolio_values  
-    portfolio_value = sum([position.bought_at for position in positions if position.is_active])
-    cash_values.append(cash)
-    portfolio_values.append(portfolio_value + cash)  # Incluye el valor en efectivo y el valor de las posiciones activas
-
-def execute_sell_order(row, positions, commission, multiplier, STOP_LOSS, TAKE_PROFIT):
-    global cash, order_count  # Usa variables globales
-    price = multiplier * row['Close']  # Usa 'Close' directamente del row
-    if cash >= price * (1 + commission):  # Aunque esto es para vender, verifica la lógica según tu estrategia
-        cash += price * (1 - commission)  # Actualiza el efectivo, asegúrate que la lógica de incremento y decremento sea correcta
-        # Crea una nueva orden y la añade a la lista de posiciones
-        new_order = Order(row.name, price, price * (1 + STOP_LOSS), price * (1 - TAKE_PROFIT), 'SHORT')
+def execute_buy_order(row, positions, commission, multiplier, STOP_LOSS, TAKE_PROFIT, cash, order_count):
+    price = multiplier * row['Close']
+    if cash >= price * (1 + commission):
+        cash -= price * (1 + commission)
+        new_order = Order(row.name, price, price * (1 - STOP_LOSS), price * (1 + TAKE_PROFIT), 'LONG')
         positions.append(new_order)
-        order_count += 1  # Incrementa el contador de órdenes
+        order_count += 1
+    return cash, order_count
+
+def execute_sell_order(row, positions, commission, multiplier, STOP_LOSS, TAKE_PROFIT, cash, order_count):
+    price = multiplier * row.Close
+    if cash >= price * (1 + commission):
+        cash += price * (1 - commission)
+        new_order = Order(row.Timestamp, price, price * (1 + STOP_LOSS), price * (1 - TAKE_PROFIT), 'SHORT')
+        positions.append(new_order)
+        order_count += 1
+    return cash, order_count
+ 
+def update_portfolio_values(data, positions, portfolio_values, cash, multiplier):
+    open_long_positions = [multiplier * data.Close.iloc[-1] for position in positions if position.order_type == 'LONG' and position.is_active]
+    open_short_positions = [-data.Close.iloc[-1] * multiplier for position in positions if position.order_type == 'SHORT' and position.is_active]
+    portfolio_values.append(sum(open_long_positions) + sum(open_short_positions) + cash)
+    return sum(open_long_positions) + sum(open_short_positions) + cash  
+ 
