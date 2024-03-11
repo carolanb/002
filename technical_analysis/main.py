@@ -22,8 +22,8 @@ def perform(data_o, data_t):
     portfolio_values = [] 
     cash_values = [] 
 
+    # Define la función backtest dentro de perform.
     def backtest(strat):
-        cash = 1_000_000
         df_sell = pd.DataFrame()
         df_buy = pd.DataFrame()
         COMISSION = 0.0025
@@ -32,46 +32,45 @@ def perform(data_o, data_t):
         positions = []
         closed_positions = []
 
+        # Suponiendo que strategies_design modifica los df_buy y df_sell
         strategies_design(strat, data, data_validation, df_buy, df_sell)
 
-        # Main loop
-        for (idx, row), (_, row_buy), (_, row_sell) in zip(data_validation.iterrows(), df_buy.iterrows(), df_sell.iterrows()):
-            # Update price
-            price = 3333 * row.Close
+        # Bucle principal de backtest
+        for (idx, row), (, row_buy), (, row_sell) in zip(data.iterrows(), df_buy.iterrows(), df_sell.iterrows()):
+            price = 1 * row.Close  # Precio actual según la simulación
 
-            # Close and open LONG positions
+            # Cierre y apertura de posiciones LONG y SHORT
             for position in list(positions):
                 if position.is_active:
                     close_position(price, position, positions, closed_positions, COMISSION)
+
             if row_buy.sum() == len(df_buy.columns):
-                execute_buy_order(row, positions, COMISSION, 3333)
-
-            # Close and open SHORT positions
-            for position in list(positions):
-                if position.is_active:
-                    close_position(price, position, positions, closed_positions, COMISSION)
+                execute_buy_order(row, positions, COMISSION, 1, STOP_LOSS, TAKE_PROFIT)
+               
             if row_sell.sum() == len(df_sell.columns):
-                execute_sell_order(row, positions, COMISSION, 3333)
+                execute_sell_order(row, positions, COMISSION, 1, STOP_LOSS, TAKE_PROFIT)
+               
+            # Actualiza los valores de efectivo y del portafolio para las posiciones abiertas
+            update_portfolio_values(data, positions, portfolio_values, cash, 1, 1000)
 
-            # Update cash and portfolio values for open positions
-            update_portfolio_values(data_validation, positions, 3333, 1000)
+        # Cálculo final del valor del portafolio fuera del bucle principal
+        final_portfolio_value = update_portfolio_values(data, positions, portfolio_values, cash, 1, 1000)
+        return final_portfolio_value, df_buy, df_sell, order_count  
 
-        # Final cash and portfolio calculation outside the loop if necessary
-        final_portfolio_value = update_portfolio_values(data_validation, positions, 3333, 1000)
-        return final_portfolio_value  
-    
     original_strategies = ['rsi', 'bb', 'MM']
 
-    # Generar todas las combinaciones posibles de estrategias para diferentes longitudes
-    all_combinations = []
-    for r in range(1, len(original_strategies) + 1):
-        combinations = list(itertools.combinations(original_strategies, r))
-        all_combinations.extend(combinations)
+    # Generar todas las combinaciones posibles de estrategias
+    all_combinations = [list(comb) for r in range(1, len(original_strategies) + 1) for comb in itertools.combinations(original_strategies, r)]
 
-    # Si necesitas convertir las tuplas a listas (por ejemplo, para que coincidan con el formato de tus estrategias existentes)
-    all_combinations = [list(comb) for comb in all_combinations]
+    strategy_dfs = {}  # Diccionario para almacenar los resultados de cada estrategia.
 
     for strat in all_combinations:
-        portfolio = backtest(strat)
-        df_trash = pd.DataFrame({'gain': [portfolio], 'strategy': [str(strat)]})
+        portfolio, strategy_df_buy, strategy_df_sell, orders_executed = backtest(strat)  # Asegúrate de capturar orders_executed
+        df_trash = pd.DataFrame({'gain': [portfolio], 'strategy': [str(strat)], 'orders_executed': [orders_executed]})
         df_results = pd.concat([df_results, df_trash], ignore_index=True)
+
+        # Almacena los dataframes de compra y venta actualizados para cada estrategia.
+        strategy_dfs[str(strat)] = {'df_buy': strategy_df_buy.copy(), 'df_sell': strategy_df_sell.copy()}
+
+    # Devolver el DataFrame de resultados podría ser útil para el análisis posterior.
+    return df_results, strategy_dfs
