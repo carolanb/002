@@ -18,6 +18,9 @@ def perform(data_o, data_t):
 
     
     df_results = pd.DataFrame({'gain': [], 'strategy': []})
+    
+    portfolio_values = [] 
+    cash_values = [] 
 
     def backtest(strat):
         cash = 1_000_000
