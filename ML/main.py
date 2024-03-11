@@ -1,8 +1,7 @@
 import pandas as pd
 import itertools 
-from utils.utils import strategies_design 
+from utils.utils import strategies_design_ml 
 from utils.utils import execute_buy_order
-from utils.utils import update_cash_and_positions
 from utils.utils import close_position
 from utils.utils import update_portfolio_values
 from utils.utils import execute_sell_order
@@ -37,7 +36,7 @@ def perform():
         portfolio_values, cash_values = [], []
  
         # Suponiendo que strategies_design modifica los df_buy y df_sell
-        strategies_design(strat, data, data_validation, df_buy, df_sell)
+        strategies_design_ml(strat, data, data_validation, df_buy, df_sell)
 
         # DataFrame para registrar valores durante el backtesting
         record_df = pd.DataFrame(index=data.index, columns=['Portfolio Value', 'Cash'])
