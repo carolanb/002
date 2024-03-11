@@ -8,18 +8,16 @@ from utils import close_position
 from utils import update_portfolio_values
 from utils import execute_sell_order
 
+def perform(data_o, data_t):
+    global  cash, order_count, cash_values, portfolio_values
+    cash = 1_000_000
+    order_count = 0
 
-def perform():
-    data = pd.read_csv('./data/aapl_5m_train.csv')
-    data_validation = pd.read_csv('./data/aapl_5m_validation.csv')
-    df_results = pd.DataFrame({'gain': [], 'ind': []})
+    data = data_o.head(1000)  # Asume que esta es una forma de preprocesar tus datos.
+    data_validation = data_t.copy()
 
-    data =   (data)
-
-    portfolio_values = []
-    cash_values = []
-
-    strategies = ['RSI', 'BB', 'SMA']
+    
+    df_results = pd.DataFrame({'gain': [], 'strategy': []})
 
     def backtest(strat):
         cash = 1_000_000
