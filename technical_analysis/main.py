@@ -7,7 +7,7 @@ from utils import close_position
 from utils import update_portfolio_values
 from utils import execute_sell_order
 
-def perform(data_o, data_t):
+def perform():
     initial_cash = 500_000
     df_results = pd.DataFrame({'gain': [], 'strategy': [], 'orders_executed': []})
     strategy_dfs = {}
