@@ -1,8 +1,8 @@
 import pandas as pd
 import itertools 
-from utils import strategies_design
+from utils import strategies_design 
 from utils import execute_buy_order
-from utils import update_cash_and_position
+from utils import update_cash_and_positions
 from utils import close_position
 from utils import update_portfolio_values
 from utils import execute_sell_order
