@@ -36,7 +36,7 @@ def perform(data_o, data_t):
         strategies_design(strat, data, data_validation, df_buy, df_sell)
 
         # Bucle principal de backtest
-        for (idx, row), (, row_buy), (, row_sell) in zip(data.iterrows(), df_buy.iterrows(), df_sell.iterrows()):
+        for (idx, row), (_, row_buy), (_, row_sell) in zip(data.iterrows(), df_buy.iterrows(), df_sell.iterrows()):
             price = 1 * row.Close  # Precio actual según la simulación
 
             # Cierre y apertura de posiciones LONG y SHORT
