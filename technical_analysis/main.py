@@ -81,28 +81,28 @@ def perform(data, rsi_thresholds, bb_window, mm_windows, commission, stop_loss, 
 
     return df_results, strategy_dfs, combined_values_df
 
+def create_optimization_function(data):
+    def optimization_function(trial):
+        rsi_buy = trial.suggest_int('rsi_buy', 10, 40)
+        rsi_sell = trial.suggest_int('rsi_sell', 60, 90)
+        bb_window = trial.suggest_int('bb_window', 15, 25)
+        mm_short_window = trial.suggest_int('mm_short_window', 20, 50)
+        mm_long_window = trial.suggest_int('mm_long_window', 100, 200)
+        commission = trial.suggest_float('commission', 0.001, 0.005)
+        stop_loss = trial.suggest_float('stop_loss', 0.02, 0.1)
+        take_profit = trial.suggest_float('take_profit', 0.02, 0.1)
 
-def optimization_function(train):
-    # Definir el rango de los hiperparámetros para que Optuna elija
-    rsi_buy = train.suggest_int('rsi_buy', 10, 40)
-    rsi_sell = train.suggest_int('rsi_sell', 60, 90)
-    bb_window = train.suggest_int('bb_window', 15, 25)
-    mm_short_window = train.suggest_int('mm_short_window', 20, 50)
-    mm_long_window = train.suggest_int('mm_long_window', 100, 200)
-    commission = train.suggest_float('commission', 0.001, 0.005)
-    stop_loss = train.suggest_float('stop_loss', 0.02, 0.1)
-    take_profit = train.suggest_float('take_profit', 0.02, 0.1)
+        df_results, _, _ = perform(
+            data,
+            (rsi_buy, rsi_sell),
+            bb_window,
+            (mm_short_window, mm_long_window),
+            commission,
+            stop_loss,
+            take_profit
+        )
+        
+        final_value = df_results['gain'].max()
+        return -final_value
 
-    # Utiliza el conjunto de datos de entrenamiento para realizar el backtest y encontrar el mejor conjunto de hiperparámetros
-    df_results, _, _ = perform(
-        data,  # Solo utiliza 'data' aquí, que es tu conjunto de entrenamiento
-        rsi_thresholds=(rsi_buy, rsi_sell),
-        bb_window=bb_window,
-        mm_windows=(mm_short_window, mm_long_window),
-        commission=commission,
-        stop_loss=stop_loss,
-        take_profit=take_profit
-    )
-    # Maximizar el valor final del portafolio
-    final_value = df_results['gain'].max()
-    return -final_value
+    return optimization_function
