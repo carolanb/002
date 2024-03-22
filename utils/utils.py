@@ -28,32 +28,29 @@ class Order:
         self.sold_at = sold_at
         self.is_active = is_active
  
-def strategies_design(strate, train_data, validate_data, df_buy, df_sell):
+def strategies_design(strate, train_data, df_buy, df_sell, rsi_thresholds, bb_window, mm_windows):  # Asegúrate de pasar todos los argumentos
     if 'rsi' in strate:
+        # Utilizar rsi_thresholds[0] y rsi_thresholds[1] como límites para la compra y venta respectivamente
         train_rsi = RSIIndicator(close=train_data['Close'], window=14).rsi()
-        validate_rsi = RSIIndicator(close=validate_data['Close'], window=14).rsi()
-        df_buy['rsi_buy_trade_signal'] = train_rsi < 25  
-        df_sell['rsi_sell_trade_signal'] = train_rsi > 75  
+        df_buy['rsi_buy_trade_signal'] = train_rsi < rsi_thresholds[0]  # -----
+        df_sell['rsi_sell_trade_signal'] = train_rsi > rsi_thresholds[1]  # -----
    
     if 'bb' in strate:
-            # Calcular medias móviles y desviación estándar para los datos de validación
-            rolling_mean = train_data['Close'].rolling(window=20).mean()
-            rolling_std = train_data['Close'].rolling(window=20).std()
- 
-            # Calcular las Bandas de Bollinger para los datos de validación
-            train_data['BBANDS_UpperBand'] = rolling_mean + (rolling_std * 2)
-            train_data['BBANDS_LowerBand'] = rolling_mean - (rolling_std * 2)
- 
-            # Generar señales de compra y venta basadas en las Bandas de Bollinger para la validación
-            df_buy['bb_buy_trade_signal'] = train_data['Close'] < train_data['BBANDS_LowerBand']
-            df_sell['bb_sell_trade_signal'] = train_data['Close'] > train_data['BBANDS_UpperBand']
+        # Usar bb_window para la ventana de las Bandas de Bollinger
+        rolling_mean = train_data['Close'].rolling(window=bb_window).mean()  # -----
+        rolling_std = train_data['Close'].rolling(window=bb_window).std()  # -----
+        train_data['BBANDS_UpperBand'] = rolling_mean + (rolling_std * 2)
+        train_data['BBANDS_LowerBand'] = rolling_mean - (rolling_std * 2)
+        df_buy['bb_buy_trade_signal'] = train_data['Close'] < train_data['BBANDS_LowerBand']
+        df_sell['bb_sell_trade_signal'] = train_data['Close'] > train_data['BBANDS_UpperBand']
            
     if 'MM' in strate:
-        short_window, long_window = 40, 100
+        # Usar mm_windows[0] y mm_windows[1] para las ventanas de las Medias Móviles corta y larga
+        short_window, long_window = mm_windows  # -----
         short_ma = train_data['Close'].rolling(window=short_window, min_periods=10).mean()
         long_ma = train_data['Close'].rolling(window=long_window, min_periods=10).mean()
-        df_buy['mm_buy_trade_signal'] = short_ma > long_ma  # Compra cuando la media corta cruza por encima de la media larga
-        df_sell['mm_sell_trade_signal'] = short_ma < long_ma  # Venta cuando la media corta cruza por debajo de la media larga
+        df_buy['mm_buy_trade_signal'] = short_ma > long_ma
+        df_sell['mm_sell_trade_signal'] = short_ma < long_ma
  
 
 def define_strategies_ml(strategy_list, historical_data, validation_data, df_buy, df_sell):
