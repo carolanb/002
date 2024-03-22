@@ -83,6 +83,7 @@ def perform(data, rsi_thresholds, bb_window, mm_windows, commission, stop_loss, 
 
 def create_optimization_function(data):
     def optimization_function(trial):
+        # Definir el rango de los hiperparámetros para que Optuna elija
         rsi_buy = trial.suggest_int('rsi_buy', 10, 40)
         rsi_sell = trial.suggest_int('rsi_sell', 60, 90)
         bb_window = trial.suggest_int('bb_window', 15, 25)
@@ -92,6 +93,7 @@ def create_optimization_function(data):
         stop_loss = trial.suggest_float('stop_loss', 0.02, 0.1)
         take_profit = trial.suggest_float('take_profit', 0.02, 0.1)
 
+        # Utiliza el conjunto de datos de entrenamiento para realizar el backtest
         df_results, _, _ = perform(
             data,
             (rsi_buy, rsi_sell),
@@ -101,8 +103,8 @@ def create_optimization_function(data):
             stop_loss,
             take_profit
         )
-        
+
+        # Maximizar el valor final del portafolio
         final_value = df_results['gain'].max()
         return -final_value
-
     return optimization_function
