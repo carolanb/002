@@ -53,34 +53,34 @@ def strategies_design(strate, train_data, df_buy, df_sell, rsi_thresholds, bb_wi
         df_sell['mm_sell_trade_signal'] = short_ma < long_ma
  
 
-def define_strategies_ml(strategy_list, historical_data, validation_data, df_buy, df_sell):
-    if 'svc' in strategy_list:
-        svc_optimal = SVC(C=optimal_C_svm)
-        svc_optimal.fit(historical_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1),
-                        historical_data['investment_target'])
-        svc_predictions = svc_optimal.predict(
-            validation_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1))
-        df_buy['svc_buy_signal'] = [True if prediction == 1 else False for prediction in svc_predictions]
-        df_sell['svc_sell_signal'] = [True if prediction == -1 else False for prediction in svc_predictions]
+# def define_strategies_ml(strategy_list, historical_data, validation_data, df_buy, df_sell):
+#     if 'svc' in strategy_list:
+#         svc_optimal = SVC(C=optimal_C_svm)
+#         svc_optimal.fit(historical_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1),
+#                         historical_data['investment_target'])
+#         svc_predictions = svc_optimal.predict(
+#             validation_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1))
+#         df_buy['svc_buy_signal'] = [True if prediction == 1 else False for prediction in svc_predictions]
+#         df_sell['svc_sell_signal'] = [True if prediction == -1 else False for prediction in svc_predictions]
 
-    if 'lr' in strategy_list:
-        lr_optimal = LogisticRegression(C=optimal_C_log_reg)
-        lr_optimal.fit(historical_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1),
-                       historical_data['investment_target'])
-        lr_predictions = lr_optimal.predict(
-            validation_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1))
-        df_buy['lr_buy_signal'] = [True if prediction == 1 else False for prediction in lr_predictions]
-        df_sell['lr_sell_signal'] = [True if prediction == -1 else False for prediction in lr_predictions]
+#     if 'lr' in strategy_list:
+#         lr_optimal = LogisticRegression(C=optimal_C_log_reg)
+#         lr_optimal.fit(historical_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1),
+#                        historical_data['investment_target'])
+#         lr_predictions = lr_optimal.predict(
+#             validation_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1))
+#         df_buy['lr_buy_signal'] = [True if prediction == 1 else False for prediction in lr_predictions]
+#         df_sell['lr_sell_signal'] = [True if prediction == -1 else False for prediction in lr_predictions]
 
-    if 'xgboost' in strategy_list:
-        xgb_optimal = GradientBoostingClassifier(learning_rate=optimal_params_xgb['learning_rate'], n_estimators=optimal_params_xgb['n_estimators'],
-                                                 subsample=optimal_params_xgb['subsample'], loss=optimal_params_xgb['loss'])
-        xgb_optimal.fit(historical_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1),
-                        historical_data['investment_target'])
-        xgb_predictions = xgb_optimal.predict(
-            validation_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1))
-        df_buy['xgb_buy_signal'] = [True if prediction == 1 else False for prediction in xgb_predictions]
-        df_sell['xgb_sell_signal'] = [True if prediction == -1 else False for prediction in xgb_predictions]
+#     if 'xgboost' in strategy_list:
+#         xgb_optimal = GradientBoostingClassifier(learning_rate=optimal_params_xgb['learning_rate'], n_estimators=optimal_params_xgb['n_estimators'],
+#                                                  subsample=optimal_params_xgb['subsample'], loss=optimal_params_xgb['loss'])
+#         xgb_optimal.fit(historical_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1),
+#                         historical_data['investment_target'])
+#         xgb_predictions = xgb_optimal.predict(
+#             validation_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1))
+#         df_buy['xgb_buy_signal'] = [True if prediction == 1 else False for prediction in xgb_predictions]
+#         df_sell['xgb_sell_signal'] = [True if prediction == -1 else False for prediction in xgb_predictions]
 
 def update_cash_and_positions(price, position, commission, cash, profit=True):
     if profit:
