@@ -82,7 +82,7 @@ def perform(data, rsi_thresholds, bb_window, mm_windows, commission, stop_loss, 
     return df_results, strategy_dfs, combined_values_df
 
 
-def optimization_function(train, data):
+def optimization_function(train):
     # Definir el rango de los hiperparámetros para que Optuna elija
     rsi_buy = train.suggest_int('rsi_buy', 10, 40)
     rsi_sell = train.suggest_int('rsi_sell', 60, 90)
