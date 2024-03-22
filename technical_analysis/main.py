@@ -89,7 +89,7 @@ def create_optimization_function(data):
         bb_window = trial.suggest_int('bb_window', 15, 25)
         mm_short_window = trial.suggest_int('mm_short_window', 20, 50)
         mm_long_window = trial.suggest_int('mm_long_window', 100, 200)
-        commission = trial.suggest_float('commission', 0.001, 0.005)
+        commission = 0.0025 # trial.suggest_float('commission', 0.001, 0.005)
         stop_loss = trial.suggest_float('stop_loss', 0.02, 0.1)
         take_profit = trial.suggest_float('take_profit', 0.02, 0.1)
 
