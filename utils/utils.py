@@ -15,7 +15,7 @@ import itertools
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
-from .ml import optimal_C_log_reg, optimal_C_svm, optimal_params_xgb
+# from .ml import optimal_C_log_reg, optimal_C_svm, optimal_params_xgb
 
 
 class Order:
