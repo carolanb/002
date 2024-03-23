@@ -25,8 +25,8 @@ def perform(data, rsi_thresholds, bb_window, mm_windows, commission, stop_loss, 
         df_sell = pd.DataFrame()
         df_buy = pd.DataFrame()
         COMISSION = 0.0025
-        STOP_LOSS = stop_loss  # Usar el parámetro 'stop_loss' -----
-        TAKE_PROFIT = take_profit  # Usar el parámetro 'take_profit' -----
+        STOP_LOSS = 0.05
+        TAKE_PROFIT = 0.05
 
 
         cash, short_cash, order_count = initial_cash, initial_short_cash, initial_order_count
