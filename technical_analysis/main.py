@@ -49,14 +49,21 @@ def perform(data, rsi_thresholds, bb_window, mm_windows, commission, stop_loss, 
                 if position.is_active:
                     if position.order_type == 'LONG':
                         cash = close_position(price, position, COMISSION, cash)
+                        position.is_active = False  # Asegúrate de marcar la posición como no activa
+
                     elif position.order_type == 'SHORT':
                         short_cash = close_position(price, position, COMISSION, short_cash)
+                        position.is_active = False  # Asegúrate de marcar la posición como no activa
+
+            # Contar posiciones activas
+            active_positions = sum(1 for position in positions if position.is_active)
+
 
             # Condiciones para ejecutar órdenes de compra/venta
-            if row_buy.sum() == len(df_buy.columns):
+            if active_positions < 100 and row_buy.sum() == len(df_buy.columns):
                 cash, order_count = execute_buy_order(row, positions, COMISSION, 1, STOP_LOSS, TAKE_PROFIT, cash, order_count)
 
-            if row_sell.sum() == len(df_sell.columns):
+            if active_positions < 100 and row_sell.sum() == len(df_sell.columns):
                 short_cash, order_count = execute_sell_order(row, positions, COMISSION, 1, STOP_LOSS, TAKE_PROFIT, short_cash, order_count)
 
             current_portfolio_value = update_portfolio_values(data, positions, portfolio_values, cash + short_cash, 1)
