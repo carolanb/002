@@ -16,7 +16,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from .ml import get_optimal_model_configs
-
+from .ml import generate_target
 
 class Order:
     def __init__(self, timestamp, bought_at, stop_loss, take_profit, order_type, sold_at=None, is_active=True):
@@ -88,6 +88,8 @@ def define_strategies_ml(strategy_list, historical_data, validation_data, df_buy
             # Actualización de señales de compra/venta
             df_buy['xgb_buy_signal'] = [True if prediction == 1 else False for prediction in xgb_predictions]
             df_sell['xgb_sell_signal'] = [True if prediction == -1 else False for prediction in xgb_predictions]
+
+
 def update_cash_and_positions(price, position, commission, cash, profit=True):
     if profit:
         cash += (price - position.bought_at) * (1 - commission if position.order_type == 'LONG' else 1 + commission)
