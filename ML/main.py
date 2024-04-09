@@ -8,7 +8,7 @@ from utils.utils import execute_sell_order
 
 
 # main
-def perform(data, rsi_thresholds, bb_window, mm_windows, commission, stop_loss, take_profit):
+def perform(data, commission, stop_loss, take_profit):
     initial_cash = 500_000
     initial_short_cash = 500_000 
     df_results = pd.DataFrame({'gain': [], 'strategy': [], 'orders_executed': []})
@@ -21,7 +21,7 @@ def perform(data, rsi_thresholds, bb_window, mm_windows, commission, stop_loss, 
     combined_values_df = pd.DataFrame(index=data.index)
 
     # Define la función backtest dentro de perform.
-    def backtest(strat, data, initial_cash, initial_short_cash, initial_order_count, rsi_thresholds, bb_window, mm_windows, commission, stop_loss, take_profit):  # -----
+    def backtest(strat, data, initial_cash, initial_short_cash, initial_order_count, commission, stop_loss, take_profit):  # -----
         df_sell = pd.DataFrame()
         df_buy = pd.DataFrame()
         COMISSION = 0.0025
@@ -33,8 +33,16 @@ def perform(data, rsi_thresholds, bb_window, mm_windows, commission, stop_loss, 
         positions = []
         portfolio_values = []
 
+
+        # Determinar el punto de corte para el 80% de los datos para entrenamiento
+        cutoff = int(len(data) * 0.8)
+
+        # Dividir los datos en entrenamiento y validación
+        training_data = data.iloc[:cutoff]
+        validation_data = data.iloc[cutoff:]
+
         # Suponiendo que strategies_design modifica los df_buy y df_sell
-        define_strategies_ml(strat, data, df_buy, df_sell, rsi_thresholds, bb_window, mm_windows)  # Asegúrate de que esto está correcto -----
+        define_strategies_ml(strat, training_data, df_buy, df_sell)
         
 
         # DataFrame para registrar valores durante el backtesting
@@ -78,7 +86,7 @@ def perform(data, rsi_thresholds, bb_window, mm_windows, commission, stop_loss, 
     for strat in all_combinations:
         final_cash, order_count, record_df, df_buy, df_sell = backtest(
             strat, data, initial_cash, initial_short_cash, 0, 
-            rsi_thresholds, bb_window, mm_windows, commission, stop_loss, take_profit)  # -----
+            commission, stop_loss, take_profit)  # -----
 
         final_value = record_df['Portfolio Value'].iloc[-1]
         new_row = pd.DataFrame({'gain': [final_value], 'strategy': [str(strat)], 'orders_executed': [order_count]})

@@ -28,7 +28,7 @@ class Order:
         self.sold_at = sold_at
         self.is_active = is_active
  
-def strategies_design(strate, train_data, df_buy, df_sell, rsi_thresholds, bb_window, mm_windows):  # Asegúrate de pasar todos los argumentos
+def strategies_design(strate, train_data, df_buy, df_sell, rsi_thresholds, bb_window, mm_windows):
     if 'rsi' in strate:
         # Utilizar rsi_thresholds[0] y rsi_thresholds[1] como límites para la compra y venta respectivamente
         train_rsi = RSIIndicator(close=train_data['Close'], window=14).rsi()
@@ -51,43 +51,37 @@ def strategies_design(strate, train_data, df_buy, df_sell, rsi_thresholds, bb_wi
         long_ma = train_data['Close'].rolling(window=long_window, min_periods=10).mean()
         df_buy['mm_buy_trade_signal'] = short_ma > long_ma
         df_sell['mm_sell_trade_signal'] = short_ma < long_ma
- 
 
-def define_strategies_ml(strategy_list, historical_data, validation_data, df_buy, df_sell):
+
+def define_strategies_ml(strategy_list, historical_data, df_buy, df_sell):
+    """
+    Define estrategias de trading basadas en modelos de aprendizaje automático incluyendo SVC, Logistic Regression y Gradient Boosting.
+    Actualiza df_buy y df_sell con señales de compra y venta basadas en predicciones de los modelos.
+    """
     optimal_configs = get_optimal_model_configs(historical_data)
 
     if 'svc' in strategy_list:
-        svc_optimal = SVC(C=optimal_configs['optimal_C_svm'])
-        svc_optimal.fit(historical_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1),
-                        historical_data['investment_target'])
-        svc_predictions = svc_optimal.predict(
-            validation_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1))
-        df_buy['svc_buy_signal'] = [True if prediction == 1 else False for prediction in svc_predictions]
-        df_sell['svc_sell_signal'] = [True if prediction == -1 else False for prediction in svc_predictions]
+        svc_optimal = SVC(C=optimal_configs['optimal_C_svm'], max_iter=1000)
+        X = historical_data.drop(['investment_target', 'future_price'], axis=1)
+        y = historical_data['investment_target']
+        svc_optimal.fit(X, y)
+        svc_predictions = svc_optimal.predict(X)
+        df_buy['svc_buy_signal'] = svc_predictions == 1
+        df_sell['svc_sell_signal'] = svc_predictions == -1
 
     if 'lr' in strategy_list:
         lr_optimal = LogisticRegression(C=optimal_configs['optimal_C_log_reg'])
-        lr_optimal.fit(historical_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1),
-                       historical_data['investment_target'])
-        lr_predictions = lr_optimal.predict(
-            validation_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1))
-        df_buy['lr_buy_signal'] = [True if prediction == 1 else False for prediction in lr_predictions]
-        df_sell['lr_sell_signal'] = [True if prediction == -1 else False for prediction in lr_predictions]
+        lr_optimal.fit(X, y)
+        lr_predictions = lr_optimal.predict(X)
+        df_buy['lr_buy_signal'] = lr_predictions == 1
+        df_sell['lr_sell_signal'] = lr_predictions == -1
 
     if 'xgboost' in strategy_list:
-            # Asume que los parámetros óptimos están bajo 'optimal_params_xgb' (y opcionalmente 'optimal_params_xgb_2')
-            xgb_params = optimal_configs['optimal_params_xgb']
-
-            # Crear una instancia de GradientBoostingClassifier con los parámetros óptimos
-            xgb_optimal = GradientBoostingClassifier(**xgb_params)
-            xgb_optimal.fit(historical_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1),
-                            historical_data['investment_target'])
-            xgb_predictions = xgb_optimal.predict(
-                validation_data.drop(['investment_target', 'future_price', 'Timestamp', 'Gmtoffset', 'Datetime'], axis=1))
-            
-            # Actualización de señales de compra/venta
-            df_buy['xgb_buy_signal'] = [True if prediction == 1 else False for prediction in xgb_predictions]
-            df_sell['xgb_sell_signal'] = [True if prediction == -1 else False for prediction in xgb_predictions]
+        xgb_optimal = GradientBoostingClassifier(**optimal_configs['optimal_params_xgb'])
+        xgb_optimal.fit(X, y)
+        xgb_predictions = xgb_optimal.predict(X)
+        df_buy['xgb_buy_signal'] = xgb_predictions == 1
+        df_sell['xgb_sell_signal'] = xgb_predictions == -1
 
 
 def update_cash_and_positions(price, position, commission, cash, profit=True):
