@@ -15,8 +15,6 @@ import itertools
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
-from .ml import get_optimal_model_configs
-from .ml import generate_target
 
 class Order:
     def __init__(self, timestamp, bought_at, stop_loss, take_profit, order_type, sold_at=None, is_active=True):
