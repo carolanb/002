@@ -67,3 +67,17 @@ def prepare_and_optimize(data):
         'SVC_C': best_C_svc, 
         'XGBOOST_PARAMS': best_params_gb
     }
+
+def prepare(data):
+    # Preparación de datos
+    data = y_generator(data)
+    data['rend'] = data['Close'].pct_change()
+    data['short_sma'] = ta.trend.SMAIndicator(data['Close'], window=5).sma_indicator()
+    data['long_sma'] = ta.trend.SMAIndicator(data['Close'], window=15).sma_indicator()
+    data['rsi'] = ta.momentum.RSIIndicator(data['Close']).rsi()
+    
+    # Asegúrate de excluir cualquier columna de fecha/hora o no numérica aquí
+    data = data.select_dtypes(include=['number'])
+    data.dropna(inplace=True)
+    # Retorna el DataFrame preparado 
+    return data
