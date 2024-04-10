@@ -70,7 +70,7 @@ def perform(data, commission, stop_loss, take_profit):
                 cash, order_count = execute_buy_order(row, positions, COMISSION, 1, STOP_LOSS, TAKE_PROFIT, cash, order_count)
 
             if active_positions < 100 and row_sell.sum() == len(df_sell.columns):
-                short_cash, order_count = execute_sell_order(row, positions, COMISSION, 1, STOP_LOSS, TAKE_PROFIT, short_cash, order_count)
+                short_cash, order_count = execute_sell_order_ml(row, positions, COMISSION, 1, STOP_LOSS, TAKE_PROFIT, short_cash, order_count)
 
             current_portfolio_value = update_portfolio_values(data, positions, portfolio_values, cash + short_cash, 1)
             portfolio_values.append(current_portfolio_value)
