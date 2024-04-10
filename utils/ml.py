@@ -6,67 +6,64 @@ from sklearn.model_selection import GridSearchCV
 import ta  
 
 
-# Función para generar el target basado en el rendimiento futuro del precio
-def generate_target(asset_dataframe):
-    asset_dataframe['future_price'] = asset_dataframe['Close'].shift(-10)
-    asset_dataframe['past_price'] = asset_dataframe['Close'].shift(1)
-    asset_dataframe['past_price_2'] = asset_dataframe['Close'].shift(2)
-    asset_dataframe.dropna(inplace=True)
-    target_column = []
-    for future_price, current_price in zip(asset_dataframe['future_price'], asset_dataframe['Close']):
-        if future_price > current_price * 1.005:
-            target_column.append(1)
-        elif future_price < current_price * 0.995:
-            target_column.append(-1)
+def y_generator(data):
+    data['price_in_10_days'] = data['Close'].shift(-10)
+    data.dropna(inplace=True)
+    y_target = []
+    for price_10, clos in zip(data['price_in_10_days'], data['Close']):
+        if price_10 > clos * 1.005:
+            y_target.append(1)
+        elif price_10 < clos * 0.995:
+            y_target.append(-1)
         else:
-            target_column.append(0)
+            y_target.append(0)
+    data['target'] = y_target
+    return data
 
-    asset_dataframe['investment_target'] = target_column
-    return asset_dataframe
+def prepare_and_optimize(data):
+    # Preparación de datos
+    data = y_generator(data)
+    data['rend'] = data['Close'].pct_change()
+    data['short_sma'] = ta.trend.SMAIndicator(data['Close'], window=5).sma_indicator()
+    data['long_sma'] = ta.trend.SMAIndicator(data['Close'], window=15).sma_indicator()
+    data['rsi'] = ta.momentum.RSIIndicator(data['Close']).rsi()
+    
+    # Asegúrate de excluir cualquier columna de fecha/hora o no numérica aquí
+    data = data.select_dtypes(include=['number'])
+    data.dropna(inplace=True)
 
-def get_optimal_model_configs(asset_data):
-    # Proceso inicial: Generación de objetivo y cálculo de indicadores técnicos
-    asset_data = generate_target(asset_data)
-    asset_data['percentage_change'] = asset_data['Close'].pct_change()  # dejarlo para el 100%---------------------------------------
-    asset_data['short_term_sma'] = ta.trend.SMAIndicator(asset_data['Close'], window=5).sma_indicator()
-    asset_data['long_term_sma'] = ta.trend.SMAIndicator(asset_data['Close'], window=15).sma_indicator()
-    asset_data['relative_strength_index'] = ta.momentum.RSIIndicator(asset_data['Close']).rsi()
-    asset_data.drop(['Timestamp', 'Gmtoffset', 'Datetime'], inplace=True, axis=1)
-    asset_data.dropna(inplace=True)
+    X = data.drop(['target', 'price_in_10_days'], axis=1)
+    y = data['target']
 
-    X = asset_data.drop(['future_price','investment_target'], axis=1)
-    y = asset_data['investment_target']
+    # Optimización para Logistic Regression
+    lr = LogisticRegression(max_iter=10000)
+    param_grid_lr = {'C': [.0001, .001, .01, 0.1, 1, 10, 100]}
+    grid_search_lr = GridSearchCV(lr, param_grid_lr, scoring='f1_weighted', cv=5)
+    grid_search_lr.fit(X, y)
+    best_C_lr = grid_search_lr.best_params_['C']
 
-    # Ajuste y búsqueda de hiperparámetros para Logistic Regression y SVM
-    log_reg_model = LogisticRegression()
-    param_grid_log_reg = {'C': [ .001, .01, 0.1, 1, 10, 100]}
-    log_reg_grid_search = GridSearchCV(log_reg_model, param_grid_log_reg, scoring='f1_weighted', cv=5) # puedo sustituro por optuna
-    log_reg_grid_search.fit(X, y)
+    # Optimización para SVC
+    svc = SVC(max_iter=10000)
+    grid_search_svc = GridSearchCV(svc, param_grid_lr, scoring='f1_weighted', cv=5)
+    grid_search_svc.fit(X, y)
+    best_C_svc = grid_search_svc.best_params_['C']
 
-    svm_model = SVC(max_iter=10000)  # max iteers 10,000 ------------------------------------------------------------------------
-    svm_grid_search = GridSearchCV(svm_model, param_grid_log_reg, scoring='f1_weighted', cv=5)
-    svm_grid_search.fit(X, y)
-
-    # Definición y primera búsqueda de hiperparámetros para GradientBoostingClassifier
-    xgb_model = GradientBoostingClassifier()
-    param_grid_xgb = {
-        'n_estimators': [1, 7, 10, 30, 50, 100, 200, 300, 500],
-        'subsample': [ 0.0001, 0.001, 0.01, 0.1, 1],
+    # Optimización para Gradient Boosting Classifier
+    xgb = GradientBoostingClassifier()
+    param_grid_gb = {
+        'n_estimators': [10, 50, 100, 200],
+        'subsample': [0.5, 0.7, 1.0],
+        'learning_rate': [0.01, 0.1, 0.2],
+        'max_depth': [3, 4, 5],
+        'loss': ['deviance', 'log_loss']  # Actualizado para soportar clasificación multiclase
     }
-    xgb_grid_search = GridSearchCV(xgb_model, param_grid_xgb, scoring='f1_weighted')
-    xgb_grid_search.fit(X, y)
+    grid_search_gb = GridSearchCV(xgb, param_grid_gb, scoring='f1_weighted', cv=5)
+    grid_search_gb.fit(X, y)
+    best_params_gb = grid_search_gb.best_params_
 
-    # Segunda configuración de parámetros para GradientBoostingClassifier
-    param_grid_xgb_2 = {
-        'learning_rate': [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1],
-        'loss': ['log_loss', 'exponential']
-    }
-    xgb_grid_search_2 = GridSearchCV(xgb_model, param_grid_xgb_2, scoring='f1_weighted')
-    xgb_grid_search_2.fit(X, y)
-
-    return {
-        'optimal_C_log_reg': log_reg_grid_search.best_params_['C'],
-        'optimal_C_svm': svm_grid_search.best_params_['C'],
-        'optimal_params_xgb': xgb_grid_search.best_params_,  # Ahora se devuelve directamente
-        'optimal_params_xgb_2': xgb_grid_search_2.best_params_,  # Agregado para completitud
+    # Retorna el DataFrame preparado y los mejores parámetros encontrados
+    return data, {
+        'LR_C': best_C_lr, 
+        'SVC_C': best_C_svc, 
+        'XGBOOST_PARAMS': best_params_gb
     }

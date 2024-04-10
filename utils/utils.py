@@ -28,6 +28,8 @@ class Order:
         self.sold_at = sold_at
         self.is_active = is_active
  
+
+# TA----------------------------------------------------------------------------------------------- 
 def strategies_design(strate, train_data, df_buy, df_sell, rsi_thresholds, bb_window, mm_windows):
     if 'rsi' in strate:
         # Utilizar rsi_thresholds[0] y rsi_thresholds[1] como límites para la compra y venta respectivamente
@@ -53,36 +55,47 @@ def strategies_design(strate, train_data, df_buy, df_sell, rsi_thresholds, bb_wi
         df_sell['mm_sell_trade_signal'] = short_ma < long_ma
 
 
-def define_strategies_ml(strategy_list, historical_data, df_buy, df_sell):
-    """
-    Define estrategias de trading basadas en modelos de aprendizaje automático incluyendo SVC, Logistic Regression y Gradient Boosting.
-    Actualiza df_buy y df_sell con señales de compra y venta basadas en predicciones de los modelos.
-    """
-    optimal_configs = get_optimal_model_configs(historical_data)
+# ML-----------------------------------------------------------------------------------------------
 
-    if 'svc' in strategy_list:
-        svc_optimal = SVC(C=optimal_configs['optimal_C_svm'], max_iter=1000)
-        X = historical_data.drop(['investment_target', 'future_price'], axis=1)
-        y = historical_data['investment_target']
-        svc_optimal.fit(X, y)
-        svc_predictions = svc_optimal.predict(X)
-        df_buy['svc_buy_signal'] = svc_predictions == 1
-        df_sell['svc_sell_signal'] = svc_predictions == -1
+def strategies_design_ml(strate, train_data, df_buy, df_sell, model_params):
+    X = train_data.drop(['target', 'price_in_10_days'], axis=1)
+    y = train_data['target']
 
-    if 'lr' in strategy_list:
-        lr_optimal = LogisticRegression(C=optimal_configs['optimal_C_log_reg'])
-        lr_optimal.fit(X, y)
-        lr_predictions = lr_optimal.predict(X)
-        df_buy['lr_buy_signal'] = lr_predictions == 1
-        df_sell['lr_sell_signal'] = lr_predictions == -1
+    # Estrategia basada en Logistic Regression
+    if 'lr' in strate:
+        lr = LogisticRegression(C=model_params['LR_C'])
+        lr.fit(X, y)
+        predictions = lr.predict(X)
+        df_buy['lr_buy_signal'] = (predictions == 1)
+        df_sell['lr_sell_signal'] = (predictions == -1)
 
-    if 'xgboost' in strategy_list:
-        xgb_optimal = GradientBoostingClassifier(**optimal_configs['optimal_params_xgb'])
-        xgb_optimal.fit(X, y)
-        xgb_predictions = xgb_optimal.predict(X)
-        df_buy['xgb_buy_signal'] = xgb_predictions == 1
-        df_sell['xgb_sell_signal'] = xgb_predictions == -1
+    # Estrategia basada en Support Vector Classifier
+    if 'svc' in strate:
+        svc = SVC(C=model_params['SVC_C'], probability=True)
+        svc.fit(X, y)
+        predictions = svc.predict(X)
+        df_buy['svc_buy_signal'] = (predictions == 1)
+        df_sell['svc_sell_signal'] = (predictions == -1)
 
+    # Estrategia basada en Gradient Boosting Classifier
+    if 'xgboost' in strate:
+        # Configura un valor predeterminado para 'loss' si no está presente
+        loss_value = model_params['XGBOOST_PARAMS'].get('loss', 'deviance')
+        xgb = GradientBoostingClassifier(
+            n_estimators=model_params['XGBOOST_PARAMS']['n_estimators'],
+            subsample=model_params['XGBOOST_PARAMS']['subsample'],
+            learning_rate=model_params['XGBOOST_PARAMS']['learning_rate'],
+            loss=loss_value)
+        
+    
+        
+        xgb.fit(X, y)
+        predictions = xgb.predict(X)
+        df_buy['xgb_buy_signal'] = (predictions == 1)
+        df_sell['xgb_sell_signal'] = (predictions == -1)
+
+
+# DL-----------------------------------------------------------------------------------------------
 
 def update_cash_and_positions(price, position, commission, cash, profit=True):
     if profit:
