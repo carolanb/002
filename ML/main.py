@@ -5,7 +5,7 @@ from utils.ml import prepare_and_optimize
 from utils.utils import execute_buy_order
 from utils.utils import close_position
 from utils.utils import update_portfolio_values
-from utils.utils import execute_sell_order
+from utils.utils import execute_sell_order_ml
 
 
 # main

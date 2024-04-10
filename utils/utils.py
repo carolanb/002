@@ -124,6 +124,16 @@ def execute_buy_order(row, positions, commission, multiplier, STOP_LOSS, TAKE_PR
         order_count += 1
     return cash, order_count
 
+def execute_sell_order_ml(row, positions, commission, multiplier, STOP_LOSS, TAKE_PROFIT, cash, order_count):
+    price = multiplier * row.Close
+    if cash >= price * (1 + commission):
+        cash += price * (1 - commission)
+        new_order = Order(row.name, price, price * (1 + STOP_LOSS), price * (1 - TAKE_PROFIT), 'SHORT')
+        positions.append(new_order)
+        order_count += 1
+    return cash, order_count
+
+
 def execute_sell_order(row, positions, commission, multiplier, STOP_LOSS, TAKE_PROFIT, cash, order_count):
     price = multiplier * row.Close
     if cash >= price * (1 + commission):
