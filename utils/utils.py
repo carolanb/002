@@ -15,6 +15,10 @@ import itertools
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
+from tensorflow import keras
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout
+from keras.layers import Input
 
 class Order:
     def __init__(self, timestamp, bought_at, stop_loss, take_profit, order_type, sold_at=None, is_active=True):
@@ -94,7 +98,42 @@ def strategies_design_ml(strate, train_data, df_buy, df_sell, model_params):
 
 
 # DL-----------------------------------------------------------------------------------------------
+def create_dl_model(input_shape):
+    model = Sequential()
+    model.add(Input(shape=(input_shape,)))  # Asegurarse de usar Input(shape=...) correctamente
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(32, activation='relu'))
+    model.add(Dense(3, activation='softmax'))  # Adecuado para 3 clases: 0, 1, y 2
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',  # Correcto para etiquetas como enteros
+                  metrics=['accuracy'])
+    return model
 
+
+def strategies_design_dl(strate, train_data, df_buy, df_sell):
+    X = train_data.drop(['target', 'price_in_10_days'], axis=1)
+    y = train_data['target']
+
+    # Entrenar modelo de deep learning
+    model = create_dl_model(X.shape[1])
+    model.fit(X, y, epochs=10, batch_size=32, verbose=0)
+
+    # Obtener predicciones del modelo
+    predictions = model.predict(X)
+    predictions_classes = np.argmax(predictions, axis=1)
+
+    # Verificar las predicciones
+    assert set(predictions_classes).issubset({0, 1, 2}), "Las predicciones contienen valores inesperados"
+
+    # Generar señales de compra y venta
+    df_buy['dl_buy_signal'] = (predictions_classes == 2)  # Suponiendo 2 para 'subir'
+    df_sell['dl_sell_signal'] = (predictions_classes == 0)  # Suponiendo 0 para 'bajar'
+
+    return {'dl_model': model}
+
+
+
+# -----------------------------------------------------------------------------------------
 def update_cash_and_positions(price, position, commission, cash, profit=True):
     if profit:
         cash += (price - position.bought_at) * (1 - commission if position.order_type == 'LONG' else 1 + commission)
