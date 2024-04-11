@@ -1,14 +1,15 @@
 import pandas as pd
 import itertools 
 from utils.utils import strategies_design_dl
-from utils.ml import prepare_and_optimize 
-from utils.ml import prepare
+from utils.dl import prepare_and_optimize 
+from utils.dl import prepare
 from utils.utils import execute_buy_order
 from utils.utils import close_position
 from utils.utils import update_portfolio_values
 from utils.utils import execute_sell_order_ml
 
 
+# main
 def perform(data, commission, stop_loss, take_profit):
     initial_cash = 500_000
     initial_short_cash = 500_000
@@ -91,7 +92,6 @@ def perform(data, commission, stop_loss, take_profit):
         combined_values_df[str(strat)] = record_df['Portfolio Value']
 
     return df_results, strategy_dfs, combined_values_df, model_params
-
 
 
 def perform_validation(data, commission, stop_loss, take_profit, model_params):
